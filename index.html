@@ -2,152 +2,205 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<title>珊瑚资本 XNO 收银台（马来西亚）</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>珊瑚资本 XNO 收银台</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <script src="https://cdn.jsdelivr.net/npm/axios@1.7.7/dist/axios.min.js"></script>
-<script src="https://unpkg.com/nanocurrency-web@1.3.4/dist/nanocurrency-web.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode.js@1.0.0/lib/qrcode.min.js"></script>
 <style>
-  body{font-family:system-ui,-apple-system,sans-serif;background:#f8fafc;margin:0;padding:20px;color:#1e293b;}
-  .container{max-width:520px;margin:0 auto;background:white;border-radius:20px;overflow:hidden;box-shadow:0 15px 40px rgba(0,0,0,0.12);}
-  header{background:linear-gradient(135deg,#0068fa,#00c4ff);color:white;padding:35px 20px;text-align:center;}
-  .main{padding:30px;}
-  .rate-today{background:#f0f9ff;padding:18px;border-radius:12px;margin:20px 0;font-size:19px;font-weight:bold;text-align:center;}
-  .disclaimer{color:#e11d48;font-size:14.5px;margin:20px 0;padding:16px;background:#fee2e2;border-radius:10px;line-height:1.6;}
-  input,button{width:100%;padding:16px;margin:12px 0;border-radius:12px;border:none;font-size:18px;box-sizing:border-box;}
-  input{border:2px solid #e2e8f0;}
-  button{background:#0068fa;color:white;font-weight:bold;cursor:pointer;}
-  button:disabled{background:#94a3b8;cursor:not-allowed;}
-  .records{margin-top:40px;padding:20px;background:#f8fafc;border-radius:16px;}
-  .record{display:flex;justify-content:space-between;align-items:center;background:white;padding:15px;margin:8px 0;border-radius:12px;}
-  .record a{color:#0068fa;text-decoration:none;font-weight:500;}
-  #status{margin:20px 0;font-weight:bold;font-size:18px;}
-  .success{color:#10b981;}
-  .error{color:#ef4444;}
-  .waiting{color:#f59e0b;}
-  .lang-switch{text-align:center;margin:10px 0;}
-  .lang-switch a{margin:0 10px;color:#0068fa;text-decoration:none;}
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family: system-ui,-apple-system,sans-serif; background:#f7f9fc; padding:15px 10px; min-height:100vh; display:flex; align-items:center; justify-content:center; }
+  .card { background:#fff; width:100%; max-width:460px; margin:auto; border-radius:20px; overflow:hidden; box-shadow:0 12px 40px rgba(0,0,0,0.12); }
+  header { background:linear-gradient(135deg,#0068fa,#00c4ff); color:#fff; padding:30px 20px; text-align:center; }
+  header h1 { font-size:24px; margin-bottom:8px; }
+  header p { opacity:0.9; font-size:15px; }
+  .main { padding:25px; }
+  .rate { background:#f0f9ff; padding:14px; border-radius:12px; text-align:center; font-weight:bold; margin-bottom:20px; font-size:16px; }
+  .disclaimer { background:#fff3cd; color:#b54700; padding:12px; border-radius:10px; font-size:13.5px; margin-bottom:20px; line-height:1.5; }
+  input { width:100%; padding:16px; margin:12px 0; border:2px solid #e2e8f0; border-radius:12px; font-size:18px; }
+  .or { text-align:center; margin:10px 0; color:#666; }
+  .fee-box { display:flex; gap:10px; margin:20px 0; }
+  .fee-btn { flex:1; padding:14px; border:2px solid #ddd; border-radius:12px; text-align:center; cursor:pointer; transition:all 0.2s; font-weight:bold; }
+  .fee-btn.active { border-color:#0068fa; background:#e6f0ff; color:#0068fa; }
+  .amount { text-align:center; font-size:26px; margin:25px 0; font-weight:bold; }
+  .amount span { color:#0068fa; }
+  button#payBtn { width:100%; padding:18px; background:#0068fa; color:#fff; border:none; border-radius:12px; font-size:20px; font-weight:bold; cursor:pointer; margin-top:10px; }
+  #qrcode { width:280px; height:280px; margin:30px auto; padding:15px; background:#fff; border-radius:16px; box-shadow:0 4px 20px rgba(0,0,0,0.1); }
+  #qrcode canvas { width:100%!important; height:100%!important; }
+  .status { text-align:center; margin:20px 0; font-size:18px; font-weight:bold; }
+  .success { color:#10b981; }
+  .waiting { color:#f59e0b; }
+  .records { margin-top:30px; padding-top:20px; border-top:1px solid #eee; }
+  .record { background:#f9f9f9; padding:12px; margin:8px 0; border-radius:10px; font-size:14px; display:flex; justify-content:space-between; }
+  .record a { color:#0068fa; text-decoration:none; }
+  @media (max-width:480px) {
+    .card { border-radius:16px; }
+    header { padding:25px 15px; }
+    header h1 { font-size:22px; }
+  }
 </style>
 </head>
 <body>
-<div class="container">
+
+<div class="card">
   <header>
     <h1>珊瑚资本 XNO 收银台</h1>
-    <p>0 手续费 · 秒到账 · 全球通用</p>
+    <p>0 手续费 · 秒到账 · 支持全球 Nano 钱包扫码支付</p>
   </header>
 
-  <div class="lang-switch">
-    <a href="/en.html">English</a> | 
-    <a href="/zh-hk.html">繁體中文</a> | 
-    <span style="color:#94a3b8;">简体中文</span>
-  </div>
-
   <div class="main">
-    <div class="rate-today" id="rateToday">正在获取今日汇率…</div>
-    
+    <div class="rate" id="rateToday">正在获取实时汇率…</div>
+
     <div class="disclaimer">
-      ⚠️ 本站仅接受离岸人民币（CNYHK）计价，不服务中国大陆用户，不支持任何形式的人民币直接支付。
+      本站仅接受离岸人民币（CNYHK）计价，不服务中国大陆用户，不支持任何形式的人民币直接支付。
     </div>
 
     <input type="number" step="0.01" id="cnyInput" placeholder="输入离岸人民币 CNYHK 金额（例如 500）">
-    <p style="text-align:center;margin:15px 0;color:#64748b;font-size:15px;">或者</p>
+    <div class="or">或者</div>
     <input type="number" step="0.01" id="usdtInput" placeholder="输入 USDT 金额（例如 65.80）">
 
-    <div style="text-align:center;margin:30px 0;font-size:24px;">
-      应付 <span id="xnoAmount" style="color:#0068fa;font-weight:bold;">0</span> XNO
+    <div style="font-size:15px; color:#666; text-align:center; margin:15px 0;">
+      请选择服务费（越高到账越快）
+    </div>
+    <div class="fee-box">
+      <div class="fee-btn active" data-fee="0.03">3%</div>
+      <div class="fee-btn" data-fee="0.06">6% <small style="color:#e91e63;">推荐</small></div>
+      <div class="fee-btn" data-fee="0.09">9% <small style="color:#d32f2f;">极速</small></div>
     </div>
 
-    <button id="connectBtn">1️⃣ 连接 Nano 钱包</button>
-    <button id="payBtn" disabled>2️⃣ 立即支付</button>
-    <div id="status"></div>
+    <div class="amount">
+      实际付款：<span id="finalXno">0</span> XNO
+      <div style="font-size:14px; color:#666; margin-top:8px;">
+        （含服务费 <span id="feePercent">3</span>%）
+      </div>
+    </div>
+
+    <button id="payBtn">生成付款二维码</button>
+
+    <div id="qrcode" style="display:none;"></div>
+    <div class="status" id="status"></div>
   </div>
 
   <div class="records">
-    <h3>最近付款记录（仅本地保存）</h3>
+    <h3 style="margin:0 25px 10px; font-size:16px; color:#333;">最近付款记录（本地保存）</h3>
     <div id="recordList"></div>
   </div>
 </div>
 
 <script>
-const MERCHANT = "nano_1itu78fktatkuruy7bftedsue7yd9hyh5zuxz6c51wyg9hsuckhmrqxjymk7";
-let wallet = null;
-let cnyToUsdt = 7.18;
+const MERCHANT_ADDRESS = "nano_1itu78fktatkuruy7bftedsue7yd9hyh5zuxz6c51wyg9hsuckhmrqxjymk7";
+let cnyToUsdt = 7.22;   // 实时更新
+let usdtToXno = 0;      // 实时更新
+let selectedFee = 0.03;
 
-async function fetchRates() {
+// 获取实时汇率
+async function updateRates() {
   try {
-    const cg = await axios.get('https://api.coingecko.com/api/v3/simple/price?ids=tether&vs_currencies=cny');
-    cnyToUsdt = cg.data.tether.cny;
-    document.getElementById('rateToday').innerHTML = `今日离岸汇率（三大交易所综合）<br>1 USDT ≈ <b>${cnyToUsdt.toFixed(4)}</b> CNYHK`;
+    const res = await axios.get('https://api.coingecko.com/api/v3/simple/price?ids=tether,nano&vs_currencies=cny,usd');
+    cnyToUsdt = res.data.tether.cny;                    // CNYHK ≈ CNY 离岸价
+    usdtToXno = res.data.tether.usd / res.data.nano.usd; // 1 USDT = ? XNO
+    document.getElementById('rateToday').innerHTML = `
+      实时汇率：<br>
+      1 USDT ≈ ${cnyToUsdt.toFixed(4)} CNYHK  |  1 XNO ≈ ${(1/usdtToXno).toFixed(4)} USD
+    `;
   } catch(e) {
-    document.getElementById('rateToday').textContent = "今日汇率：1 USDT ≈ 7.22 CNYHK（备用）";
+    document.getElementById('rateToday').textContent = "汇率获取失败，使用备用值";
   }
 }
 
-async function calcXno() {
+// 计算最终 XNO
+function calc() {
   const cny = parseFloat(document.getElementById('cnyInput').value) || 0;
   const usdt = parseFloat(document.getElementById('usdtInput').value) || 0;
-  const finalUsdt = cny ? cny / cnyToUsdt : usdt;
-  if (finalUsdt <= 0) return document.getElementById('xnoAmount').textContent = '0';
-
-  const res = await axios.get('https://api.coingecko.com/api/v3/simple/price?ids=tether,nano&vs_currencies=usd');
-  const rate = res.data.tether.usd / res.data.nano.usd;
-  document.getElementById('xnoAmount').textContent = (finalUsdt * rate).toFixed(6);
+  const baseUsdt = cny ? (cny / cnyToUsdt) : usdt;
+  if (baseUsdt <= 0) {
+    document.getElementById('finalXno').textContent = '0';
+    return;
+  }
+  const baseXno = baseUsdt * usdtToXno;
+  const finalXno = baseXno * (1 + selectedFee);
+  document.getElementById('finalXno').textContent = finalXno.toFixed(6);
+  document.getElementById('feePercent').textContent = (selectedFee*100).toFixed(0);
 }
 
-['cnyInput','usdtInput'].forEach(id => document.getElementById(id).addEventListener('input', calcXno));
+// 服务费按钮
+document.querySelectorAll('.fee-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.fee-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    selectedFee = parseFloat(btn.dataset.fee);
+    calc();
+  });
+});
 
-document.getElementById('connectBtn').onclick = async () => {
-  try {
-    const accounts = await nanocurrencyWeb.walletConnect.requestAccounts();
-    wallet = accounts[0];
-    document.getElementById('connectBtn').innerHTML = `已连接<br><small>${wallet.slice(0,12)}...${wallet.slice(-8)}</small>`;
-    document.getElementById('connectBtn').disabled = true;
-    document.getElementById('payBtn').disabled = false;
-    showStatus("钱包连接成功", "success");
-  } catch(e) { showStatus("连接失败，请重试", "error"); }
-};
+// 输入监听
+['cnyInput','usdtInput'].forEach(id => {
+  document.getElementById(id).addEventListener('input', calc);
+});
 
+// 生成二维码
 document.getElementById('payBtn').onclick = async () => {
   const cny = parseFloat(document.getElementById('cnyInput').value)||0;
   const usdt = parseFloat(document.getElementById('usdtInput').value)||0;
   if(cny+usdt===0) return alert("请输入金额");
-  const finalUsdt = cny ? cny / cnyToUsdt : usdt;
 
-  const res = await axios.get('https://api.coingecko.com/api/v3/simple/price?ids=tether,nano&vs_currencies=usd');
-  const rate = res.data.tether.usd / res.data.nano.usd;
-  const xnoRaw = Math.round(finalUsdt * rate * 1e30).toString();
+  await updateRates();
+  calc();
 
-  showStatus("请在钱包中确认交易…", "waiting");
-  try {
-    const hash = await nanocurrencyWeb.walletConnect.send({account:wallet, to:MERCHANT, amountRaw:xnoRaw});
-    const orderId = Date.now().toString(36).toUpperCase();
-    saveRecord(orderId, finalUsdt.toFixed(2), (finalUsdt*rate).toFixed(6), hash);
-    showStatus("支付成功！感谢您的支持 🎉", "success");
-    loadRecords();
-    setTimeout(()=>{location.reload()},8000);
-  } catch(e) {
-    showStatus("支付已取消或失败", "error");
-  }
+  const baseUsdt = cny ? (cny / cnyToUsdt) : usdt;
+  const baseXno = baseUsdt * usdtToXno;
+  const finalXno = baseXno * (1 + selectedFee);
+  const finalRaw = Math.round(finalXno * 1e30).toString(); // Nano raw 单位
+
+  const nanoUri = `nano:${MERCHANT_ADDRESS}?amount=${finalRaw}raw`;
+
+  document.getElementById('qrcode').style.display = 'block';
+  document.getElementById('qrcode').innerHTML = '';
+  new QRCode(document.getElementById('qrcode'), {
+    text: nanoUri,
+    width: 280,
+    height: 280,
+    colorDark: "#000000",
+    colorLight: "#ffffff",
+    correctLevel : QRCode.CorrectLevel.M
+  });
+
+  document.getElementById('status').textContent = `请使用 Natrium / Nault / Nano Wallet 扫码支付 ${finalXno.toFixed(6)} XNO`;
+  document.getElementById('status').className = 'waiting';
+
+  // 生成订单号并保存
+  const orderId = Date.now().toString(36).toUpperCase();
+  const record = {
+    id: orderId,
+    cny: cny || (usdt * cnyToUsdt).toFixed(2),
+    usdt: baseUsdt.toFixed(2),
+    xno: finalXno.toFixed(6),
+    fee: (selectedFee*100)+'%',
+    time: new Date().toLocaleString('zh-CN')
+  };
+  saveRecord(record);
+  loadRecords();
 };
 
-function showStatus(msg,type="waiting"){document.getElementById('status').textContent=msg;document.getElementById('status').className=type;}
-function saveRecord(id,usdt,xno,hash){
-  const recs=JSON.parse(localStorage.getItem('coral_payments')||'[]');
-  recs.unshift({id,usdt,xno,hash,time:new Date().toLocaleString('zh-CN')});
-  localStorage.setItem('coral_payments',JSON.stringify(recs.slice(0,50)));
+function saveRecord(r) {
+  const list = JSON.parse(localStorage.getItem('coral_records')||'[]');
+  list.unshift(r);
+  localStorage.setItem('coral_records', JSON.stringify(list.slice(0,30)));
 }
-function loadRecords(){
-  const list=document.getElementById('recordList');
-  const recs=JSON.parse(localStorage.getItem('coral_payments')||'[]');
-  list.innerHTML=recs.map(r=>`
+function loadRecords() {
+  const list = document.getElementById('recordList');
+  const data = JSON.parse(localStorage.getItem('coral_records')||'[]');
+  list.innerHTML = data.map(r => `
     <div class="record">
-      <div>订单 ${r.id}<br><small>${r.time}<br>${r.usdt} USDT ≈ ${r.xno} XNO</small></div>
-      <a href="https://nanobrowser.app/transaction/${r.hash}" target="_blank">查看交易 →</a>
-    </div>`).join('');
+      <div>订单 ${r.id}<br><small>${r.time} | ${r.cny} CNYHK ≈ ${r.usdt} USDT + ${r.fee}</small></div>
+      <div style="font-size:13px;">${r.xno} XNO</div>
+    </div>
+  `).join('');
 }
 
-fetchRates();
-setInterval(fetchRates,60000);
-calcXno();
+// 初始化
+updateRates();
+setInterval(updateRates, 60000);
+calc();
 loadRecords();
 </script>
 </body>
