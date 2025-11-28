@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>珊瑚资本 XNO 收银台（马来西亚）</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="https://cdn.jsdelivr.net/npm/axios@1.7.7/dist/axios.min.js"></script>
+<script src="https://unpkg.com/nanocurrency-web@1.3.4/dist/nanocurrency-web.js"></script>
+<style>
+  body{font-family:system-ui,-apple-system,sans-serif;background:#f8fafc;margin:0;padding:20px;color:#1e293b;}
+  .container{max-width:520px;margin:0 auto;background:white;border-radius:20px;overflow:hidden;box-shadow:0 15px 40px rgba(0,0,0,0.12);}
+  header{background:linear-gradient(135deg,#0068fa,#00c4ff);color:white;padding:35px 20px;text-align:center;}
+  .main{padding:30px;}
+  .rate-today{background:#f0f9ff;padding:18px;border-radius:12px;margin:20px 0;font-size:19px;font-weight:bold;text-align:center;}
+  .disclaimer{color:#e11d48;font-size:14.5px;margin:20px 0;padding:16px;background:#fee2e2;border-radius:10px;line-height:1.6;}
+  input,button{width:100%;padding:16px;margin:12px 0;border-radius:12px;border:none;font-size:18px;box-sizing:border-box;}
+  input{border:2px solid #e2e8f0;}
+  button{background:#0068fa;color:white;font-weight:bold;cursor:pointer;}
+  button:disabled{background:#94a3b8;cursor:not-allowed;}
+  .records{margin-top:40px;padding:20px;background:#f8fafc;border-radius:16px;}
+  .record{display:flex;justify-content:space-between;align-items:center;background:white;padding:15px;margin:8px 0;border-radius:12px;}
+  .record a{color:#0068fa;text-decoration:none;font-weight:500;}
+  #status{margin:20px 0;font-weight:bold;font-size:18px;}
+  .success{color:#10b981;}
+  .error{color:#ef4444;}
+  .waiting{color:#f59e0b;}
+  .lang-switch{text-align:center;margin:10px 0;}
+  .lang-switch a{margin:0 10px;color:#0068fa;text-decoration:none;}
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>珊瑚资本 XNO 收银台</h1>
+    <p>0 手续费 · 秒到账 · 全球通用</p>
+  </header>
+
+  <div class="lang-switch">
+    <a href="/en.html">English</a> | 
+    <a href="/zh-hk.html">繁體中文</a> | 
+    <span style="color:#94a3b8;">简体中文</span>
+  </div>
+
+  <div class="main">
+    <div class="rate-today" id="rateToday">正在获取今日汇率…</div>
+    
+    <div class="disclaimer">
+      ⚠️ 本站仅接受离岸人民币（CNYHK）计价，不服务中国大陆用户，不支持任何形式的人民币直接支付。
+    </div>
+
+    <input type="number" step="0.01" id="cnyInput" placeholder="输入离岸人民币 CNYHK 金额（例如 500）">
+    <p style="text-align:center;margin:15px 0;color:#64748b;font-size:15px;">或者</p>
+    <input type="number" step="0.01" id="usdtInput" placeholder="输入 USDT 金额（例如 65.80）">
+
+    <div style="text-align:center;margin:30px 0;font-size:24px;">
+      应付 <span id="xnoAmount" style="color:#0068fa;font-weight:bold;">0</span> XNO
+    </div>
+
+    <button id="connectBtn">1️⃣ 连接 Nano 钱包</button>
+    <button id="payBtn" disabled>2️⃣ 立即支付</button>
+    <div id="status"></div>
+  </div>
+
+  <div class="records">
+    <h3>最近付款记录（仅本地保存）</h3>
+    <div id="recordList"></div>
+  </div>
+</div>
+
+<script>
+const MERCHANT = "nano_1itu78fktatkuruy7bftedsue7yd9hyh5zuxz6c51wyg9hsuckhmrqxjymk7";
+let wallet = null;
+let cnyToUsdt = 7.18;
+
+async function fetchRates() {
+  try {
+    const cg = await axios.get('https://api.coingecko.com/api/v3/simple/price?ids=tether&vs_currencies=cny');
+    cnyToUsdt = cg.data.tether.cny;
+    document.getElementById('rateToday').innerHTML = `今日离岸汇率（三大交易所综合）<br>1 USDT ≈ <b>${cnyToUsdt.toFixed(4)}</b> CNYHK`;
+  } catch(e) {
+    document.getElementById('rateToday').textContent = "今日汇率：1 USDT ≈ 7.22 CNYHK（备用）";
+  }
+}
+
+async function calcXno() {
+  const cny = parseFloat(document.getElementById('cnyInput').value) || 0;
+  const usdt = parseFloat(document.getElementById('usdtInput').value) || 0;
+  const finalUsdt = cny ? cny / cnyToUsdt : usdt;
+  if (finalUsdt <= 0) return document.getElementById('xnoAmount').textContent = '0';
+
+  const res = await axios.get('https://api.coingecko.com/api/v3/simple/price?ids=tether,nano&vs_currencies=usd');
+  const rate = res.data.tether.usd / res.data.nano.usd;
+  document.getElementById('xnoAmount').textContent = (finalUsdt * rate).toFixed(6);
+}
+
+['cnyInput','usdtInput'].forEach(id => document.getElementById(id).addEventListener('input', calcXno));
+
+document.getElementById('connectBtn').onclick = async () => {
+  try {
+    const accounts = await nanocurrencyWeb.walletConnect.requestAccounts();
+    wallet = accounts[0];
+    document.getElementById('connectBtn').innerHTML = `已连接<br><small>${wallet.slice(0,12)}...${wallet.slice(-8)}</small>`;
+    document.getElementById('connectBtn').disabled = true;
+    document.getElementById('payBtn').disabled = false;
+    showStatus("钱包连接成功", "success");
+  } catch(e) { showStatus("连接失败，请重试", "error"); }
+};
+
+document.getElementById('payBtn').onclick = async () => {
+  const cny = parseFloat(document.getElementById('cnyInput').value)||0;
+  const usdt = parseFloat(document.getElementById('usdtInput').value)||0;
+  if(cny+usdt===0) return alert("请输入金额");
+  const finalUsdt = cny ? cny / cnyToUsdt : usdt;
+
+  const res = await axios.get('https://api.coingecko.com/api/v3/simple/price?ids=tether,nano&vs_currencies=usd');
+  const rate = res.data.tether.usd / res.data.nano.usd;
+  const xnoRaw = Math.round(finalUsdt * rate * 1e30).toString();
+
+  showStatus("请在钱包中确认交易…", "waiting");
+  try {
+    const hash = await nanocurrencyWeb.walletConnect.send({account:wallet, to:MERCHANT, amountRaw:xnoRaw});
+    const orderId = Date.now().toString(36).toUpperCase();
+    saveRecord(orderId, finalUsdt.toFixed(2), (finalUsdt*rate).toFixed(6), hash);
+    showStatus("支付成功！感谢您的支持 🎉", "success");
+    loadRecords();
+    setTimeout(()=>{location.reload()},8000);
+  } catch(e) {
+    showStatus("支付已取消或失败", "error");
+  }
+};
+
+function showStatus(msg,type="waiting"){document.getElementById('status').textContent=msg;document.getElementById('status').className=type;}
+function saveRecord(id,usdt,xno,hash){
+  const recs=JSON.parse(localStorage.getItem('coral_payments')||'[]');
+  recs.unshift({id,usdt,xno,hash,time:new Date().toLocaleString('zh-CN')});
+  localStorage.setItem('coral_payments',JSON.stringify(recs.slice(0,50)));
+}
+function loadRecords(){
+  const list=document.getElementById('recordList');
+  const recs=JSON.parse(localStorage.getItem('coral_payments')||'[]');
+  list.innerHTML=recs.map(r=>`
+    <div class="record">
+      <div>订单 ${r.id}<br><small>${r.time}<br>${r.usdt} USDT ≈ ${r.xno} XNO</small></div>
+      <a href="https://nanobrowser.app/transaction/${r.hash}" target="_blank">查看交易 →</a>
+    </div>`).join('');
+}
+
+fetchRates();
+setInterval(fetchRates,60000);
+calcXno();
+loadRecords();
+</script>
+</body>
+</html>
